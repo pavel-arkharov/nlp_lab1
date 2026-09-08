@@ -2,7 +2,7 @@ import unittest
 
 from nltk.probability import FreqDist
 
-from lab1_analysis import (
+from tools.generate_site_outputs import (
     character_length,
     normalize_words,
     numeric_summary,

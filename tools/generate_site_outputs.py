@@ -25,7 +25,7 @@ from nltk.corpus import brown, nps_chat, stopwords
 from nltk.probability import FreqDist
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT / "outputs"
 DEFAULT_SITE_DATA = ROOT / "docs" / "data" / "lab_results.json"
 DEFAULT_SITE_REPORT = ROOT / "docs" / "downloads" / "lab1_report.md"

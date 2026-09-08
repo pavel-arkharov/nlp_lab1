@@ -5,8 +5,8 @@
 **Subject:** Natural Language Processing
 
 This repository presents the completed NLP laboratory work using Python and
-NLTK. The primary result is a reproducible corpus-analysis script supported by
-numbered written answers, data tables, and static figures.
+NLTK. The primary result is a compact, reproducible corpus-analysis script
+supported by numbered written answers, data tables, and static figures.
 
 An [interactive web presentation](https://pavel-arkharov.github.io/nlp_lab1/)
 accompanies the analysis. It gives the teacher a structured view of every lab
@@ -75,7 +75,9 @@ per-sentence measurements remain available as CSV data.
 
 ## Project results
 
-- [`lab1_analysis.py`](lab1_analysis.py) contains the numbered Python analysis.
+- [`lab1.py`](lab1.py) is the concise, self-contained laboratory submission.
+- [`tools/generate_site_outputs.py`](tools/generate_site_outputs.py) creates the
+  extended report files and website dataset; it is not part of the submission.
 - [`outputs/lab1_report.md`](outputs/lab1_report.md) contains the written answers.
 - [`outputs/figures/`](outputs/figures/) contains eleven labeled PNG figures.
 - [`outputs/tables/`](outputs/tables/) contains the complete numerical CSV data.
