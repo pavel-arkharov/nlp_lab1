@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="NLP Lab 1 corpus-frequency analysis using NLTK's NPS Chat and Brown corpora.">
+    <meta name="theme-color" content="#f5f7f6">
+    <title>Lab 1 | NLP</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
+    <script defer src="config.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <canvas id="word-field" aria-hidden="true"></canvas>
+    <a class="skip-link" href="#report">Skip to the report</a>
+
+    <header class="report-header">
+      <div class="header-inner">
+        <div class="header-copy">
+          <p class="course-label" id="course-name">NLP / Natural Language Processing</p>
+          <h1>Lab <span>1</span></h1>
+          <p class="author-line">
+            <span id="student-name">Pavel Arkharov</span>
+            <span aria-hidden="true">/</span>
+            <span>NLTK corpus analysis</span>
+          </p>
+        </div>
+
+        <dl class="headline-metrics" id="headline-metrics" aria-label="Corpus summary"></dl>
+      </div>
+    </header>
+
+    <nav class="report-nav" aria-label="Report controls">
+      <div class="nav-inner">
+        <label for="section-select">Section</label>
+        <select id="section-select">
+          <option value="task-1">01 Corpus preparation</option>
+          <option value="task-2">02 Most frequent words</option>
+          <option value="task-3">03 Alternative illustrations</option>
+          <option value="task-4">04 Frequency-range samples</option>
+          <option value="task-5">05 Word lengths</option>
+          <option value="task-6">06 Modal words</option>
+          <option value="task-7">07 Brown stopwords</option>
+        </select>
+        <div class="nav-actions">
+          <button type="button" id="expand-all">Expand all</button>
+          <button type="button" id="collapse-all">Collapse all</button>
+          <a href="downloads/lab1_report.md" download>Report .md</a>
+          <a href="data/lab_results.json" download>Data .json</a>
+        </div>
+      </div>
+    </nav>
+
+    <main id="report" class="report">
+      <div class="load-state" id="load-state" role="status">Loading generated analysis...</div>
+
+      <details class="task" id="task-1" data-task="1" open>
+        <summary>
+          <span class="task-number">01</span>
+          <span class="summary-copy">
+            <strong>Corpus preparation</strong>
+            <small>Import and normalize the NPS Chat corpus</small>
+          </span>
+          <span class="summary-result" id="result-1"></span>
+        </summary>
+        <div class="task-body">
+          <p class="answer-label">Answer</p>
+          <p class="answer-lead" id="task-1-answer"></p>
+          <dl class="stat-grid" id="task-1-stats"></dl>
+          <div class="method-note">
+            <strong>Method.</strong>
+            <span id="task-1-method"></span>
+          </div>
+        </div>
+      </details>
+
+      <details class="task" id="task-2" data-task="2">
+        <summary>
+          <span class="task-number">02</span>
+          <span class="summary-copy">
+            <strong>Twenty most frequent words</strong>
+            <small>Frequency histogram with labeled axes</small>
+          </span>
+          <span class="summary-result" id="result-2"></span>
+        </summary>
+        <div class="task-body">
+          <p class="answer-label">Answer</p>
+          <p class="answer-lead">The chart ranks the twenty most frequent normalized words by occurrence count.</p>
+          <div class="chart chart-tall" id="chart-top-words" role="img" aria-label="Bar chart of the twenty most frequent words"></div>
+          <div class="table-wrap" id="table-top-words"></div>
+        </div>
+      </details>
+
+      <details class="task" id="task-3" data-task="3">
+        <summary>
+          <span class="task-number">03</span>
+          <span class="summary-copy">
+            <strong>Alternative graphical illustrations</strong>
+            <small>Rank-frequency and cumulative token coverage</small>
+          </span>
+          <span class="summary-result" id="result-3"></span>
+        </summary>
+        <div class="task-body">
+          <p class="answer-label">Answer</p>
+          <p class="answer-lead">The log-log view reveals the corpus's Zipf-like frequency shape. The coverage curve shows how much of the corpus is represented as successively rarer words are included.</p>
+          <div class="chart-grid">
+            <div class="chart" id="chart-rank-frequency" role="img" aria-label="Log-log rank-frequency line chart"></div>
+            <div class="chart" id="chart-coverage" role="img" aria-label="Cumulative token coverage line chart"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="task" id="task-4" data-task="4">
+        <summary>
+          <span class="task-number">04</span>
+          <span class="summary-copy">
+            <strong>Frequency-range samples</strong>
+            <small>Thirty least and thirty middle-frequency words</small>
+          </span>
+          <span class="summary-result" id="result-4"></span>
+        </summary>
+        <div class="task-body">
+          <p class="answer-label">Answer</p>
+          <div class="method-grid">
+            <p><strong>Least-frequency selection.</strong> <span id="least-method"></span></p>
+            <p><strong>Middle-frequency selection.</strong> <span id="middle-method"></span></p>
+          </div>
+          <div class="chart-grid">
+            <div class="chart chart-tall" id="chart-least-words" role="img" aria-label="Bar chart of thirty least-frequent words"></div>
+            <div class="chart chart-tall" id="chart-middle-words" role="img" aria-label="Bar chart of thirty middle-frequency words"></div>
+          </div>
+          <div class="table-grid">
+            <div class="table-wrap" id="table-least-words"></div>
+            <div class="table-wrap" id="table-middle-words"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="task" id="task-5" data-task="5">
+        <summary>
+          <span class="task-number">05</span>
+          <span class="summary-copy">
+            <strong>Word length versus frequency</strong>
+            <small>Token frequency summed for each word length</small>
+          </span>
+          <span class="summary-result" id="result-5"></span>
+        </summary>
+        <div class="task-body">
+          <p class="answer-label">Answer</p>
+          <p class="answer-lead">Occurrences of every normalized word are grouped by its character length. The line also shows how many distinct word types have each length.</p>
+          <div class="chart" id="chart-word-lengths" role="img" aria-label="Combined chart of word length and frequency"></div>
+          <div class="table-wrap" id="table-word-lengths"></div>
+        </div>
+      </details>
+
+      <details class="task" id="task-6" data-task="6">
+        <summary>
+          <span class="task-number">06</span>
+          <span class="summary-copy">
+            <strong>Modal words</strong>
+            <small>Frequencies and lengths of matching NPS Chat posts</small>
+          </span>
+          <span class="summary-result" id="result-6"></span>
+        </summary>
+        <div class="task-body">
+          <p class="answer-label">Answer</p>
+          <p class="answer-lead" id="modal-method"></p>
+          <div class="chart" id="chart-modals" role="img" aria-label="Bar chart of modal word frequencies"></div>
+          <div class="chart-grid">
+            <div class="chart" id="chart-modal-words" role="img" aria-label="Box plot of word lengths for posts containing modal words"></div>
+            <div class="chart" id="chart-modal-characters" role="img" aria-label="Box plot of character lengths for posts containing modal words"></div>
+          </div>
+          <div class="table-wrap" id="table-modals"></div>
+        </div>
+      </details>
+
+      <details class="task" id="task-7" data-task="7">
+        <summary>
+          <span class="task-number">07</span>
+          <span class="summary-copy">
+            <strong>Brown corpus stopwords</strong>
+            <small>Stopword count versus sentence length</small>
+          </span>
+          <span class="summary-result" id="result-7"></span>
+        </summary>
+        <div class="task-body">
+          <p class="answer-label">Answer</p>
+          <p class="answer-lead" id="brown-answer"></p>
+          <dl class="stat-grid" id="task-7-stats"></dl>
+          <div class="chart-grid">
+            <div class="chart" id="chart-brown-words" role="img" aria-label="Sentence density by stopword count and word length"></div>
+            <div class="chart" id="chart-brown-characters" role="img" aria-label="Sentence density by stopword count and character length"></div>
+          </div>
+          <div class="method-note">
+            <strong>Reading the plots.</strong>
+            Circle size and color represent the number of Brown sentences with each combination of sentence length and stopword count.
+          </div>
+        </div>
+      </details>
+    </main>
+
+    <footer class="report-footer">
+      <p>Generated from NLTK's NPS Chat and Brown corpora.</p>
+      <p id="generated-at"></p>
+    </footer>
+  </body>
+</html>
