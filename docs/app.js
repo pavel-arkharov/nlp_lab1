@@ -350,16 +350,6 @@ function populateAnswers(data) {
     ["Brown sentences", formatNumber(task7.sentences)]
   ]);
 
-  setText("result-1", `${formatNumber(task1.posts)} posts`);
-  setText("result-2", `${data.task_2.top_20[0].word}: ${formatNumber(data.task_2.top_20[0].count)}`);
-  setText("result-3", `${formatNumber(data.task_3.full_vocabulary_rows)} word types`);
-  setText("result-4", `target ${formatNumber(data.task_4.middle_target, 2)}`);
-  const peakLength = data.task_5.word_lengths.reduce((best, item) => item.token_count > best.token_count ? item : best);
-  setText("result-5", `peak: ${peakLength.length} characters`);
-  const modalTotal = data.task_6.modals.reduce((total, modal) => total + modal.occurrences, 0);
-  setText("result-6", `${formatNumber(modalTotal)} occurrences`);
-  setText("result-7", `r = ${formatNumber(task7.correlation_words, 3)}`);
-
   setText(
     "task-1-answer",
     `NPS Chat contains ${formatNumber(task1.posts)} posts and ${formatNumber(task1.raw_tokens)} raw tokens. After normalization, ${formatNumber(task1.word_tokens)} word tokens remain, representing ${formatNumber(task1.vocabulary_size)} distinct word types.`
@@ -442,16 +432,7 @@ function populateAnswers(data) {
 
 function initializeControls() {
   const details = [...document.querySelectorAll("details.task")];
-  const select = document.getElementById("section-select");
-
-  select.addEventListener("change", () => {
-    const selected = document.getElementById(select.value);
-    selected.open = true;
-    window.requestAnimationFrame(() => {
-      renderChartsForTask(selected);
-      selected.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  });
+  const downloadMenu = document.getElementById("download-menu");
 
   document.getElementById("expand-all").addEventListener("click", () => {
     details.forEach((detail) => {
@@ -463,6 +444,25 @@ function initializeControls() {
   document.getElementById("collapse-all").addEventListener("click", () => {
     details.forEach((detail) => {
       detail.open = false;
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (downloadMenu.open && !downloadMenu.contains(event.target)) {
+      downloadMenu.open = false;
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && downloadMenu.open) {
+      downloadMenu.open = false;
+      downloadMenu.querySelector("summary").focus();
+    }
+  });
+
+  downloadMenu.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      downloadMenu.open = false;
     });
   });
 

@@ -33,21 +33,16 @@
 
     <nav class="report-nav" aria-label="Report controls">
       <div class="nav-inner">
-        <label for="section-select">Section</label>
-        <select id="section-select">
-          <option value="task-1">01 Corpus preparation</option>
-          <option value="task-2">02 Most frequent words</option>
-          <option value="task-3">03 Alternative illustrations</option>
-          <option value="task-4">04 Frequency-range samples</option>
-          <option value="task-5">05 Word lengths</option>
-          <option value="task-6">06 Modal words</option>
-          <option value="task-7">07 Brown stopwords</option>
-        </select>
         <div class="nav-actions">
           <button type="button" id="expand-all">Expand all</button>
           <button type="button" id="collapse-all">Collapse all</button>
-          <a href="downloads/lab1_report.md" download>Report .md</a>
-          <a href="data/lab_results.json" download>Data .json</a>
+          <details class="download-menu" id="download-menu">
+            <summary>Download report</summary>
+            <div class="download-options" role="menu">
+              <a href="downloads/lab1_report.md" download role="menuitem">Report .md</a>
+              <a href="data/lab_results.json" download role="menuitem">Data .json</a>
+            </div>
+          </details>
         </div>
       </div>
     </nav>
@@ -62,7 +57,6 @@
             <strong>Corpus preparation</strong>
             <small>Import and normalize the NPS Chat corpus</small>
           </span>
-          <span class="summary-result" id="result-1"></span>
         </summary>
         <div class="task-body">
           <p class="answer-label">Answer</p>
@@ -82,7 +76,6 @@
             <strong>Twenty most frequent words</strong>
             <small>Frequency histogram with labeled axes</small>
           </span>
-          <span class="summary-result" id="result-2"></span>
         </summary>
         <div class="task-body">
           <p class="answer-label">Answer</p>
@@ -99,7 +92,6 @@
             <strong>Alternative graphical illustrations</strong>
             <small>Rank-frequency and cumulative token coverage</small>
           </span>
-          <span class="summary-result" id="result-3"></span>
         </summary>
         <div class="task-body">
           <p class="answer-label">Answer</p>
@@ -118,7 +110,6 @@
             <strong>Frequency-range samples</strong>
             <small>Thirty least and thirty middle-frequency words</small>
           </span>
-          <span class="summary-result" id="result-4"></span>
         </summary>
         <div class="task-body">
           <p class="answer-label">Answer</p>
@@ -144,7 +135,6 @@
             <strong>Word length versus frequency</strong>
             <small>Token frequency summed for each word length</small>
           </span>
-          <span class="summary-result" id="result-5"></span>
         </summary>
         <div class="task-body">
           <p class="answer-label">Answer</p>
@@ -161,7 +151,6 @@
             <strong>Modal words</strong>
             <small>Frequencies and lengths of matching NPS Chat posts</small>
           </span>
-          <span class="summary-result" id="result-6"></span>
         </summary>
         <div class="task-body">
           <p class="answer-label">Answer</p>
@@ -182,7 +171,6 @@
             <strong>Brown corpus stopwords</strong>
             <small>Stopword count versus sentence length</small>
           </span>
-          <span class="summary-result" id="result-7"></span>
         </summary>
         <div class="task-body">
           <p class="answer-label">Answer</p>
