@@ -113,11 +113,48 @@ function renderChart(elementId) {
   }
   let chart = charts.get(elementId);
   if (!chart) {
+    container.replaceChildren();
     chart = window.echarts.init(container, null, { renderer: "canvas" });
     charts.set(elementId, chart);
   }
   chart.setOption(chartRenderers.get(elementId)(), true);
   chart.resize();
+}
+
+function renderCodeEvidence(data) {
+  document.querySelectorAll("[data-code-task]").forEach((section) => {
+    const evidence = data.code?.[section.dataset.codeTask];
+    if (!evidence) {
+      section.hidden = true;
+      return;
+    }
+
+    section.querySelector(".implementation-summary").textContent = evidence.summary;
+
+    const steps = section.querySelector(".implementation-steps");
+    steps.replaceChildren();
+    evidence.steps.forEach((stepText) => {
+      const step = document.createElement("li");
+      step.textContent = stepText;
+      steps.append(step);
+    });
+
+    section.querySelector(".source-label code").textContent =
+      `${evidence.source} / ${evidence.functions.join(" + ")}`;
+
+    const code = section.querySelector(".source-code code");
+    code.replaceChildren();
+    evidence.snippet.split("\n").forEach((text, index) => {
+      const line = document.createElement("span");
+      line.className = "code-line";
+      if (text.trimStart().startsWith("#")) {
+        line.classList.add("comment");
+      }
+      line.dataset.line = index + 1;
+      line.textContent = text || " ";
+      code.append(line);
+    });
+  });
 }
 
 function renderChartsForTask(taskElement) {
@@ -432,9 +469,13 @@ function populateAnswers(data) {
 
 function initializeControls() {
   const details = [...document.querySelectorAll("details.task")];
+  const implementations = [...document.querySelectorAll("details.implementation")];
   const downloadMenu = document.getElementById("download-menu");
 
   document.getElementById("expand-all").addEventListener("click", () => {
+    implementations.forEach((detail) => {
+      detail.open = false;
+    });
     details.forEach((detail) => {
       detail.open = true;
       window.requestAnimationFrame(() => renderChartsForTask(detail));
@@ -443,6 +484,9 @@ function initializeControls() {
 
   document.getElementById("collapse-all").addEventListener("click", () => {
     details.forEach((detail) => {
+      detail.open = false;
+    });
+    implementations.forEach((detail) => {
       detail.open = false;
     });
   });
@@ -553,12 +597,19 @@ async function initializeReport() {
     }
     labData = await response.json();
     populateAnswers(labData);
+    renderCodeEvidence(labData);
     registerCharts(labData);
     document.querySelectorAll("details.task[open]").forEach((detail) => renderChartsForTask(detail));
     loadState.hidden = true;
   } catch (error) {
     loadState.classList.add("error");
-    loadState.textContent = "The generated analysis data could not be loaded. Run the Python analysis, then serve the docs folder through a local web server.";
+    const reportLink = document.createElement("a");
+    reportLink.href = "downloads/lab1_report.md";
+    reportLink.textContent = "Open the generated report.";
+    loadState.replaceChildren(
+      document.createTextNode("The interactive data could not be loaded. "),
+      reportLink
+    );
     console.error(error);
   }
 }

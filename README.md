@@ -75,9 +75,11 @@ per-sentence measurements remain available as CSV data.
 
 ## Project results
 
-- [`lab1.py`](lab1.py) is the concise, self-contained laboratory submission.
-- [`tools/generate_site_outputs.py`](tools/generate_site_outputs.py) creates the
-  extended report files and website dataset; it is not part of the submission.
+- [`lab1.py`](lab1.py) is the concise, self-contained laboratory submission and
+  the single source of truth for all seven analyses.
+- [`tools/generate_site_outputs.py`](tools/generate_site_outputs.py) imports those
+  analyses and creates the extended report files and website dataset. It does not
+  reimplement the laboratory calculations and is not part of the submission.
 - [`outputs/lab1_report.md`](outputs/lab1_report.md) contains the written answers.
 - [`outputs/figures/`](outputs/figures/) contains eleven labeled PNG figures.
 - [`outputs/tables/`](outputs/tables/) contains the complete numerical CSV data.
@@ -89,5 +91,12 @@ per-sentence measurements remain available as CSV data.
 The presentation is a separate display layer rather than a replacement for the
 Python work. It reads the JSON produced by the analysis and presents the same
 results through numbered expandable sections, animated charts, responsive
-tables, tooltips, and a compact corpus summary. No analytical values are manually
-duplicated in the JavaScript interface.
+tables, tooltips, and a compact corpus summary. Each chapter also includes a
+collapsed, commented excerpt read directly from the relevant function in
+`lab1.py`, followed by a plain-language explanation of its steps. No analytical
+values or Python snippets are manually duplicated in the JavaScript interface.
+
+Python-rendered figures remain available as chart fallbacks if the interactive
+chart library cannot load. Automated tests cover the shared analysis functions,
+complete artifact generation, JSON integrity, code synchronization, fallback
+assets, and the site's collapsed initial state.

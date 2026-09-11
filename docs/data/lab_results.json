@@ -2,7 +2,7 @@
   "meta": {
     "title": "Lab 1",
     "subject": "Natural Language Processing",
-    "generated_at": "2026-09-08 07:26 UTC",
+    "generated_at": "2026-09-11 06:36 UTC",
     "nltk_version": "3.10.3"
   },
   "task_1": {
@@ -12597,5 +12597,99 @@
       }
     ],
     "character_bin_width": 10
+  },
+  "code": {
+    "task_1": {
+      "source": "lab1.py",
+      "functions": [
+        "clean_words",
+        "task_1_prepare_nps_chat"
+      ],
+      "summary": "The corpus is flattened into tokens, cleaned, and converted into one reusable frequency table.",
+      "steps": [
+        "Read every NPS Chat post and keep each post as a list of tokens.",
+        "Flatten the posts, lowercase real words, and discard punctuation and numbers.",
+        "Build an NLTK FreqDist so later tasks can query word counts."
+      ],
+      "snippet": "def clean_words(tokens):\n    \"\"\"Lowercase words and remove punctuation and numeric tokens.\"\"\"\n    return [token.lower() for token in tokens if WORD_PATTERN.fullmatch(token)]\n\ndef task_1_prepare_nps_chat():\n    \"\"\"Load NPS Chat and create the frequency distribution used by Tasks 2-6.\"\"\"\n    posts = [list(post) for post in nps_chat.posts()]\n    raw_tokens = [token for post in posts for token in post]\n    words = clean_words(raw_tokens)\n    frequencies = FreqDist(words)\n    return posts, raw_tokens, words, frequencies"
+    },
+    "task_2": {
+      "source": "lab1.py",
+      "functions": [
+        "task_2_most_frequent"
+      ],
+      "summary": "NLTK sorts the frequency table and returns the twenty largest counts.",
+      "steps": [
+        "Receive the frequency distribution created in Task 1.",
+        "Call most_common(20) to rank words by occurrence count.",
+        "Use the returned word-count pairs for both the table and bar chart."
+      ],
+      "snippet": "def task_2_most_frequent(frequencies):\n    \"\"\"Return the twenty words with the largest occurrence counts.\"\"\"\n    return frequencies.most_common(20)"
+    },
+    "task_3": {
+      "source": "lab1.py",
+      "functions": [
+        "task_3_frequency_views"
+      ],
+      "summary": "Each vocabulary item receives a rank and a running percentage of all corpus tokens.",
+      "steps": [
+        "Walk through every word from most frequent to least frequent.",
+        "Add each frequency to a running total.",
+        "Convert that total to a percentage for the cumulative-coverage curve."
+      ],
+      "snippet": "def task_3_frequency_views(frequencies):\n    \"\"\"Calculate word rank and cumulative corpus coverage.\"\"\"\n    total_words = frequencies.N()\n    cumulative = 0\n    rows = []\n    for rank, (word, frequency) in enumerate(frequencies.most_common(), start=1):\n        cumulative += frequency\n        coverage = cumulative / total_words * 100\n        rows.append((rank, word, frequency, coverage))\n    return rows"
+    },
+    "task_4": {
+      "source": "lab1.py",
+      "functions": [
+        "task_4_frequency_samples"
+      ],
+      "summary": "Rare words are selected directly; middle-frequency words are selected around a geometric midpoint.",
+      "steps": [
+        "Sort ascending by frequency and alphabetically to choose thirty rare words consistently.",
+        "Calculate the geometric midpoint between the smallest and largest counts.",
+        "Choose the thirty words closest to that midpoint on a logarithmic scale."
+      ],
+      "snippet": "def task_4_frequency_samples(frequencies, sample_size=30):\n    \"\"\"Select the least words and words near the middle of the frequency scale.\"\"\"\n    least = sorted(frequencies.items(), key=lambda item: (item[1], item[0]))[\n        :sample_size\n    ]\n\n    # A geometric midpoint suits the strongly skewed word-frequency scale.\n    target = math.sqrt(min(frequencies.values()) * max(frequencies.values()))\n    middle = sorted(\n        frequencies.items(),\n        key=lambda item: (\n            abs(math.log(item[1]) - math.log(target)),\n            item[0],\n        ),\n    )[:sample_size]\n    middle.sort(key=lambda item: (-item[1], item[0]))\n    return least, middle, target"
+    },
+    "task_5": {
+      "source": "lab1.py",
+      "functions": [
+        "task_5_word_lengths"
+      ],
+      "summary": "Word counts are regrouped by the number of characters in each distinct word.",
+      "steps": [
+        "Visit every distinct word and its frequency.",
+        "Add its frequency to the total for that character length.",
+        "Also count how many distinct word types have each length."
+      ],
+      "snippet": "def task_5_word_lengths(frequencies):\n    \"\"\"Group token frequency and distinct word types by character length.\"\"\"\n    token_totals = Counter()\n    type_totals = Counter()\n    for word, frequency in frequencies.items():\n        token_totals[len(word)] += frequency\n        type_totals[len(word)] += 1\n    return [\n        (length, token_totals[length], type_totals[length])\n        for length in sorted(token_totals)\n    ]"
+    },
+    "task_6": {
+      "source": "lab1.py",
+      "functions": [
+        "task_6_modal_words"
+      ],
+      "summary": "Every post is checked for six modal words, then matching posts are measured.",
+      "steps": [
+        "Count every occurrence of will, must, might, may, could, and can.",
+        "When a post contains a modal, record that post's word and character lengths once.",
+        "Return both overall counts and the per-post measurements used by the box plots."
+      ],
+      "snippet": "def task_6_modal_words(posts):\n    \"\"\"Count modal words and measure every post containing each modal.\"\"\"\n    occurrences = Counter({modal: 0 for modal in MODALS})\n    word_lengths = {modal: [] for modal in MODALS}\n    character_lengths = {modal: [] for modal in MODALS}\n    matching_posts = []\n\n    for post_number, post in enumerate(posts, start=1):\n        post_words = clean_words(post)\n        counts = Counter(post_words)\n        for modal in MODALS:\n            occurrences[modal] += counts[modal]\n            if counts[modal]:\n                # A matching post contributes once to that modal's length data.\n                word_lengths[modal].append(len(post_words))\n                character_lengths[modal].append(character_length(post))\n                matching_posts.append(\n                    (\n                        modal,\n                        post_number,\n                        counts[modal],\n                        len(post_words),\n                        character_length(post),\n                    )\n                )\n    return occurrences, word_lengths, character_lengths, matching_posts"
+    },
+    "task_7": {
+      "source": "lab1.py",
+      "functions": [
+        "task_7_brown_stopwords"
+      ],
+      "summary": "Each Brown sentence is measured in words, characters, and English stopword occurrences.",
+      "steps": [
+        "Load NLTK's English stopword set and clean each Brown sentence.",
+        "Count words that occur in the stopword set.",
+        "Store one measurement row per sentence for the density plots."
+      ],
+      "snippet": "def task_7_brown_stopwords():\n    \"\"\"Measure stopword count and length for every Brown corpus sentence.\"\"\"\n    english_stopwords = set(stopwords.words(\"english\"))\n    metrics = []\n    for sentence_number, sentence in enumerate(brown.sents(), start=1):\n        sentence_words = clean_words(sentence)\n        stopword_count = sum(\n            word in english_stopwords for word in sentence_words\n        )\n        metrics.append(\n            (\n                sentence_number,\n                stopword_count,\n                len(sentence_words),\n                character_length(sentence),\n            )\n        )\n    return english_stopwords, metrics"
+    }
   }
 }

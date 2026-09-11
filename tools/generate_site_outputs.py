@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import argparse
 import csv
+import inspect
 import json
 import math
-import re
 import shutil
 import statistics
+import sys
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
@@ -21,17 +22,21 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import nltk
-from nltk.corpus import brown, nps_chat, stopwords
-from nltk.probability import FreqDist
 
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+import lab1 as submission
+
+
 DEFAULT_OUTPUT_DIR = ROOT / "outputs"
 DEFAULT_SITE_DATA = ROOT / "docs" / "data" / "lab_results.json"
 DEFAULT_SITE_REPORT = ROOT / "docs" / "downloads" / "lab1_report.md"
+DEFAULT_SITE_FIGURES = ROOT / "docs" / "figures"
 
-MODALS = ("will", "must", "might", "may", "could", "can")
-WORD_PATTERN = re.compile(r"^[A-Za-z]+(?:'[A-Za-z]+)*$")
+MODALS = submission.MODALS
 COLORS = {
     "blue": "#2D6CDF",
     "coral": "#E05A47",
@@ -41,72 +46,94 @@ COLORS = {
     "paper": "#F6F8F7",
 }
 
+CODE_GUIDES = {
+    "task_1": {
+        "functions": (submission.clean_words, submission.task_1_prepare_nps_chat),
+        "summary": "The corpus is flattened into tokens, cleaned, and converted into one reusable frequency table.",
+        "steps": (
+            "Read every NPS Chat post and keep each post as a list of tokens.",
+            "Flatten the posts, lowercase real words, and discard punctuation and numbers.",
+            "Build an NLTK FreqDist so later tasks can query word counts.",
+        ),
+    },
+    "task_2": {
+        "functions": (submission.task_2_most_frequent,),
+        "summary": "NLTK sorts the frequency table and returns the twenty largest counts.",
+        "steps": (
+            "Receive the frequency distribution created in Task 1.",
+            "Call most_common(20) to rank words by occurrence count.",
+            "Use the returned word-count pairs for both the table and bar chart.",
+        ),
+    },
+    "task_3": {
+        "functions": (submission.task_3_frequency_views,),
+        "summary": "Each vocabulary item receives a rank and a running percentage of all corpus tokens.",
+        "steps": (
+            "Walk through every word from most frequent to least frequent.",
+            "Add each frequency to a running total.",
+            "Convert that total to a percentage for the cumulative-coverage curve.",
+        ),
+    },
+    "task_4": {
+        "functions": (submission.task_4_frequency_samples,),
+        "summary": "Rare words are selected directly; middle-frequency words are selected around a geometric midpoint.",
+        "steps": (
+            "Sort ascending by frequency and alphabetically to choose thirty rare words consistently.",
+            "Calculate the geometric midpoint between the smallest and largest counts.",
+            "Choose the thirty words closest to that midpoint on a logarithmic scale.",
+        ),
+    },
+    "task_5": {
+        "functions": (submission.task_5_word_lengths,),
+        "summary": "Word counts are regrouped by the number of characters in each distinct word.",
+        "steps": (
+            "Visit every distinct word and its frequency.",
+            "Add its frequency to the total for that character length.",
+            "Also count how many distinct word types have each length.",
+        ),
+    },
+    "task_6": {
+        "functions": (submission.task_6_modal_words,),
+        "summary": "Every post is checked for six modal words, then matching posts are measured.",
+        "steps": (
+            "Count every occurrence of will, must, might, may, could, and can.",
+            "When a post contains a modal, record that post's word and character lengths once.",
+            "Return both overall counts and the per-post measurements used by the box plots.",
+        ),
+    },
+    "task_7": {
+        "functions": (submission.task_7_brown_stopwords,),
+        "summary": "Each Brown sentence is measured in words, characters, and English stopword occurrences.",
+        "steps": (
+            "Load NLTK's English stopword set and clean each Brown sentence.",
+            "Count words that occur in the stopword set.",
+            "Store one measurement row per sentence for the density plots.",
+        ),
+    },
+}
 
-def ensure_nltk_data(allow_download: bool = True) -> None:
-    """Ensure that the three corpora required by the assignment are available."""
 
-    resources = {
-        "nps_chat": "corpora/nps_chat",
-        "brown": "corpora/brown",
-        "stopwords": "corpora/stopwords",
-    }
-    for package, resource_path in resources.items():
-        try:
-            nltk.data.find(resource_path)
-        except LookupError:
-            if not allow_download:
-                raise RuntimeError(
-                    f"Missing NLTK resource '{package}'. Run without --skip-download."
-                ) from None
-            print(f"    Downloading missing NLTK resource: {package}")
-            if not nltk.download(package, quiet=True):
-                raise RuntimeError(f"NLTK could not download '{package}'.")
+def build_code_evidence() -> dict[str, dict[str, object]]:
+    """Read the displayed snippets directly from the Moodle submission file."""
 
-
-def normalize_words(tokens: Iterable[str]) -> list[str]:
-    """Return lowercase lexical tokens, excluding punctuation and numeric tokens."""
-
-    return [token.lower() for token in tokens if WORD_PATTERN.fullmatch(token)]
-
-
-def character_length(tokens: Sequence[str]) -> int:
-    """Count characters after reconstructing a tokenized sentence with spaces."""
-
-    return len(" ".join(tokens))
+    evidence = {}
+    for task, guide in CODE_GUIDES.items():
+        snippet = "\n\n".join(
+            inspect.getsource(function).rstrip()
+            for function in guide["functions"]
+        )
+        evidence[task] = {
+            "source": "lab1.py",
+            "functions": [function.__name__ for function in guide["functions"]],
+            "summary": guide["summary"],
+            "steps": guide["steps"],
+            "snippet": snippet,
+        }
+    return evidence
 
 
 def records_from_pairs(pairs: Iterable[tuple[str, int]]) -> list[dict[str, int | str]]:
     return [{"word": word, "count": int(count)} for word, count in pairs]
-
-
-def select_least_frequent(
-    frequencies: FreqDist[str], count: int = 30
-) -> list[tuple[str, int]]:
-    """Select rare words deterministically, resolving frequency ties alphabetically."""
-
-    return sorted(frequencies.items(), key=lambda item: (item[1], item[0]))[:count]
-
-
-def select_middle_frequent(
-    frequencies: FreqDist[str], count: int = 30
-) -> tuple[list[tuple[str, int]], float]:
-    """Select words nearest the geometric midpoint of the frequency range.
-
-    Natural-language frequencies are strongly right-skewed. A geometric midpoint
-    therefore represents the middle of the observed scale more usefully than an
-    arithmetic midpoint or a vocabulary-rank median dominated by hapax words.
-    """
-
-    if not frequencies:
-        return [], 0.0
-    minimum = min(frequencies.values())
-    maximum = max(frequencies.values())
-    target = math.sqrt(minimum * maximum)
-    candidates = sorted(
-        frequencies.items(),
-        key=lambda item: (abs(math.log(item[1]) - math.log(target)), item[0]),
-    )[:count]
-    return sorted(candidates, key=lambda item: (-item[1], item[0])), target
 
 
 def percentile(sorted_values: Sequence[int], fraction: float) -> float:
@@ -320,10 +347,7 @@ def plot_stopword_density(
 
 
 def analyze_nps_chat(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
-    posts = [list(post) for post in nps_chat.posts()]
-    raw_tokens = [token for post in posts for token in post]
-    words = normalize_words(raw_tokens)
-    frequencies: FreqDist[str] = FreqDist(words)
+    posts, raw_tokens, words, frequencies = submission.task_1_prepare_nps_chat()
 
     # Task 1: import and prepare NPS Chat.
     task_1 = {
@@ -341,7 +365,7 @@ def analyze_nps_chat(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
     )
 
     # Task 2: twenty most frequent words.
-    top_20 = records_from_pairs(frequencies.most_common(20))
+    top_20 = records_from_pairs(submission.task_2_most_frequent(frequencies))
     write_csv(
         tables_dir / "02_top_20_words.csv",
         ("rank", "word", "frequency"),
@@ -356,19 +380,16 @@ def analyze_nps_chat(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
     print("[2] Twenty most frequent words calculated and plotted.")
 
     # Task 3: alternative rank-frequency and cumulative illustrations.
-    total_words = len(words)
-    cumulative = 0
-    rank_records: list[dict[str, float | int | str]] = []
-    for rank, (word, frequency) in enumerate(frequencies.most_common(), 1):
-        cumulative += frequency
-        rank_records.append(
-            {
-                "rank": rank,
-                "word": word,
-                "frequency": frequency,
-                "coverage_percent": round(cumulative / total_words * 100, 4),
-            }
-        )
+    rank_records = [
+        {
+            "rank": rank,
+            "word": word,
+            "frequency": frequency,
+            "coverage_percent": round(coverage, 4),
+        }
+        for rank, word, frequency, coverage
+        in submission.task_3_frequency_views(frequencies)
+    ]
     write_csv(
         tables_dir / "03_rank_frequency.csv",
         ("rank", "word", "frequency", "cumulative_coverage_percent"),
@@ -382,8 +403,9 @@ def analyze_nps_chat(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
     print("[3] Zipf rank-frequency and cumulative-coverage illustrations generated.")
 
     # Task 4: least- and middle-frequency samples.
-    least_pairs = select_least_frequent(frequencies)
-    middle_pairs, middle_target = select_middle_frequent(frequencies)
+    least_pairs, middle_pairs, middle_target = (
+        submission.task_4_frequency_samples(frequencies)
+    )
     least_30 = records_from_pairs(least_pairs)
     middle_30 = records_from_pairs(middle_pairs)
     write_csv(
@@ -413,18 +435,14 @@ def analyze_nps_chat(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
     )
 
     # Task 5: aggregate token frequency by word length.
-    token_totals_by_length: Counter[int] = Counter()
-    types_by_length: Counter[int] = Counter()
-    for word, frequency in frequencies.items():
-        token_totals_by_length[len(word)] += frequency
-        types_by_length[len(word)] += 1
     length_records = [
         {
             "length": length,
-            "token_count": token_totals_by_length[length],
-            "type_count": types_by_length[length],
+            "token_count": token_count,
+            "type_count": type_count,
         }
-        for length in sorted(token_totals_by_length)
+        for length, token_count, type_count
+        in submission.task_5_word_lengths(frequencies)
     ]
     write_csv(
         tables_dir / "05_word_length_frequency.csv",
@@ -438,30 +456,12 @@ def analyze_nps_chat(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
     print("[5] Word lengths aggregated by token frequency and plotted.")
 
     # Task 6: modal frequency and lengths of every matching post.
-    modal_occurrences = Counter({modal: 0 for modal in MODALS})
-    modal_word_lengths = {modal: [] for modal in MODALS}
-    modal_character_lengths = {modal: [] for modal in MODALS}
-    modal_rows: list[tuple[object, ...]] = []
-    for post_index, post in enumerate(posts, 1):
-        post_words = normalize_words(post)
-        counts = Counter(post_words)
-        post_word_length = len(post_words)
-        post_character_length = character_length(post)
-        for modal in MODALS:
-            occurrence_count = counts[modal]
-            modal_occurrences[modal] += occurrence_count
-            if occurrence_count:
-                modal_word_lengths[modal].append(post_word_length)
-                modal_character_lengths[modal].append(post_character_length)
-                modal_rows.append(
-                    (
-                        modal,
-                        post_index,
-                        occurrence_count,
-                        post_word_length,
-                        post_character_length,
-                    )
-                )
+    (
+        modal_occurrences,
+        modal_word_lengths,
+        modal_character_lengths,
+        modal_rows,
+    ) = submission.task_6_modal_words(posts)
     modal_records: list[dict[str, object]] = []
     for modal in MODALS:
         modal_records.append(
@@ -541,19 +541,17 @@ def analyze_nps_chat(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
 
 def analyze_brown(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
     # Task 7: stopword count and word/character length for every Brown sentence.
-    english_stopwords = set(stopwords.words("english"))
-    metrics: list[dict[str, int]] = []
-    for sentence_number, sentence in enumerate(brown.sents(), 1):
-        sentence_tokens = list(sentence)
-        words = normalize_words(sentence_tokens)
-        metrics.append(
-            {
-                "sentence": sentence_number,
-                "stopwords": sum(word in english_stopwords for word in words),
-                "words": len(words),
-                "characters": character_length(sentence_tokens),
-            }
-        )
+    english_stopwords, measurement_rows = submission.task_7_brown_stopwords()
+    metrics = [
+        {
+            "sentence": sentence,
+            "stopwords": stopword_count,
+            "words": word_length,
+            "characters": character_length,
+        }
+        for sentence, stopword_count, word_length, character_length
+        in measurement_rows
+    ]
 
     write_csv(
         tables_dir / "07_brown_sentence_metrics.csv",
@@ -769,6 +767,35 @@ def validate_results(results: dict[str, object]) -> None:
     assert [record["word"] for record in results["task_6"]["modals"]] == list(MODALS)
     assert results["task_1"]["word_tokens"] > 0
     assert results["task_7"]["sentences"] > 0
+    assert set(results["code"]) == {f"task_{number}" for number in range(1, 8)}
+
+
+def build_results(figures_dir: Path, tables_dir: Path) -> dict[str, object]:
+    """Run the canonical submission analysis and assemble presentation data."""
+
+    nps_results = analyze_nps_chat(figures_dir, tables_dir)
+    brown_results = analyze_brown(figures_dir, tables_dir)
+    results = {
+        "meta": {
+            "title": "Lab 1",
+            "subject": "Natural Language Processing",
+            "generated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
+            "nltk_version": nltk.__version__,
+        },
+        **nps_results,
+        "task_7": brown_results,
+        "code": build_code_evidence(),
+    }
+    validate_results(results)
+    return results
+
+
+def copy_site_figures(figures_dir: Path) -> None:
+    """Copy Python-rendered figures used when interactive charts are unavailable."""
+
+    DEFAULT_SITE_FIGURES.mkdir(parents=True, exist_ok=True)
+    for figure in figures_dir.glob("*.png"):
+        shutil.copyfile(figure, DEFAULT_SITE_FIGURES / figure.name)
 
 
 def parse_args() -> argparse.Namespace:
@@ -806,20 +833,8 @@ def main() -> None:
     DEFAULT_SITE_REPORT.parent.mkdir(parents=True, exist_ok=True)
 
     print("NLP Lab 1 analysis")
-    ensure_nltk_data(allow_download=not args.skip_download)
-    nps_results = analyze_nps_chat(figures_dir, tables_dir)
-    brown_results = analyze_brown(figures_dir, tables_dir)
-    results = {
-        "meta": {
-            "title": "Lab 1",
-            "subject": "Natural Language Processing",
-            "generated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
-            "nltk_version": nltk.__version__,
-        },
-        **nps_results,
-        "task_7": brown_results,
-    }
-    validate_results(results)
+    submission.ensure_nltk_data(allow_download=not args.skip_download)
+    results = build_results(figures_dir, tables_dir)
 
     with args.site_data.open("w", encoding="utf-8") as handle:
         json.dump(results, handle, indent=2, ensure_ascii=True)
@@ -828,6 +843,7 @@ def main() -> None:
     report_path = output_dir / "lab1_report.md"
     report_path.write_text(build_report(results), encoding="utf-8")
     shutil.copyfile(report_path, DEFAULT_SITE_REPORT)
+    copy_site_figures(figures_dir)
 
     print(f"Done. Numbered report: {report_path}")
     print(f"      Figures: {figures_dir}")

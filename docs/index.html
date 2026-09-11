@@ -6,10 +6,10 @@
     <meta name="description" content="NLP Lab 1 corpus-frequency analysis using NLTK's NPS Chat and Brown corpora.">
     <meta name="theme-color" content="#f5f7f6">
     <title>Lab 1 | NLP</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260911">
     <script defer src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
-    <script defer src="config.js"></script>
-    <script defer src="app.js"></script>
+    <script defer src="config.js?v=20260911"></script>
+    <script defer src="app.js?v=20260911"></script>
   </head>
   <body>
     <canvas id="word-field" aria-hidden="true"></canvas>
@@ -34,8 +34,8 @@
     <nav class="report-nav" aria-label="Report controls">
       <div class="nav-inner">
         <div class="nav-actions">
-          <button type="button" id="expand-all">Expand all</button>
-          <button type="button" id="collapse-all">Collapse all</button>
+          <button type="button" id="expand-all">Expand results</button>
+          <button type="button" id="collapse-all">Collapse results</button>
           <details class="download-menu" id="download-menu">
             <summary>Download report</summary>
             <div class="download-options" role="menu">
@@ -49,6 +49,12 @@
 
     <main id="report" class="report">
       <div class="load-state" id="load-state" role="status">Loading generated analysis...</div>
+      <noscript>
+        <div class="noscript-note">
+          Interactive charts are unavailable, but the complete
+          <a href="downloads/lab1_report.md">generated report</a> and Python figures remain accessible.
+        </div>
+      </noscript>
 
       <details class="task" id="task-1" data-task="1">
         <summary>
@@ -66,6 +72,21 @@
             <strong>Method.</strong>
             <span id="task-1-method"></span>
           </div>
+          <details class="implementation" data-code-task="task_1">
+            <summary>
+              <span class="code-symbol" aria-hidden="true">&lt;/&gt;</span>
+              <span class="implementation-heading">
+                <strong>How Python produces this result</strong>
+                <small>Code taken directly from the Moodle submission</small>
+              </span>
+            </summary>
+            <div class="implementation-body">
+              <p class="implementation-summary"></p>
+              <ol class="implementation-steps"></ol>
+              <div class="source-label"><span>Source</span><code></code></div>
+              <pre class="source-code"><code></code></pre>
+            </div>
+          </details>
         </div>
       </details>
 
@@ -80,8 +101,25 @@
         <div class="task-body">
           <p class="answer-label">Answer</p>
           <p class="answer-lead">The chart ranks the twenty most frequent normalized words by occurrence count.</p>
-          <div class="chart chart-tall" id="chart-top-words" role="img" aria-label="Bar chart of the twenty most frequent words"></div>
+          <div class="chart chart-tall" id="chart-top-words" role="img" aria-label="Bar chart of the twenty most frequent words">
+            <img class="chart-fallback" src="figures/02_top_20_words.png" alt="">
+          </div>
           <div class="table-wrap" id="table-top-words"></div>
+          <details class="implementation" data-code-task="task_2">
+            <summary>
+              <span class="code-symbol" aria-hidden="true">&lt;/&gt;</span>
+              <span class="implementation-heading">
+                <strong>How Python produces this result</strong>
+                <small>Code taken directly from the Moodle submission</small>
+              </span>
+            </summary>
+            <div class="implementation-body">
+              <p class="implementation-summary"></p>
+              <ol class="implementation-steps"></ol>
+              <div class="source-label"><span>Source</span><code></code></div>
+              <pre class="source-code"><code></code></pre>
+            </div>
+          </details>
         </div>
       </details>
 
@@ -97,9 +135,28 @@
           <p class="answer-label">Answer</p>
           <p class="answer-lead">The log-log view reveals the corpus's Zipf-like frequency shape. The coverage curve shows how much of the corpus is represented as successively rarer words are included.</p>
           <div class="chart-grid">
-            <div class="chart" id="chart-rank-frequency" role="img" aria-label="Log-log rank-frequency line chart"></div>
-            <div class="chart" id="chart-coverage" role="img" aria-label="Cumulative token coverage line chart"></div>
+            <div class="chart" id="chart-rank-frequency" role="img" aria-label="Log-log rank-frequency line chart">
+              <img class="chart-fallback" src="figures/03a_zipf_rank_frequency.png" alt="">
+            </div>
+            <div class="chart" id="chart-coverage" role="img" aria-label="Cumulative token coverage line chart">
+              <img class="chart-fallback" src="figures/03b_cumulative_coverage.png" alt="">
+            </div>
           </div>
+          <details class="implementation" data-code-task="task_3">
+            <summary>
+              <span class="code-symbol" aria-hidden="true">&lt;/&gt;</span>
+              <span class="implementation-heading">
+                <strong>How Python produces this result</strong>
+                <small>Code taken directly from the Moodle submission</small>
+              </span>
+            </summary>
+            <div class="implementation-body">
+              <p class="implementation-summary"></p>
+              <ol class="implementation-steps"></ol>
+              <div class="source-label"><span>Source</span><code></code></div>
+              <pre class="source-code"><code></code></pre>
+            </div>
+          </details>
         </div>
       </details>
 
@@ -118,13 +175,32 @@
             <p><strong>Middle-frequency selection.</strong> <span id="middle-method"></span></p>
           </div>
           <div class="chart-grid">
-            <div class="chart chart-tall" id="chart-least-words" role="img" aria-label="Bar chart of thirty least-frequent words"></div>
-            <div class="chart chart-tall" id="chart-middle-words" role="img" aria-label="Bar chart of thirty middle-frequency words"></div>
+            <div class="chart chart-tall" id="chart-least-words" role="img" aria-label="Bar chart of thirty least-frequent words">
+              <img class="chart-fallback" src="figures/04a_least_30_words.png" alt="">
+            </div>
+            <div class="chart chart-tall" id="chart-middle-words" role="img" aria-label="Bar chart of thirty middle-frequency words">
+              <img class="chart-fallback" src="figures/04b_middle_30_words.png" alt="">
+            </div>
           </div>
           <div class="table-grid">
             <div class="table-wrap" id="table-least-words"></div>
             <div class="table-wrap" id="table-middle-words"></div>
           </div>
+          <details class="implementation" data-code-task="task_4">
+            <summary>
+              <span class="code-symbol" aria-hidden="true">&lt;/&gt;</span>
+              <span class="implementation-heading">
+                <strong>How Python produces this result</strong>
+                <small>Code taken directly from the Moodle submission</small>
+              </span>
+            </summary>
+            <div class="implementation-body">
+              <p class="implementation-summary"></p>
+              <ol class="implementation-steps"></ol>
+              <div class="source-label"><span>Source</span><code></code></div>
+              <pre class="source-code"><code></code></pre>
+            </div>
+          </details>
         </div>
       </details>
 
@@ -139,8 +215,25 @@
         <div class="task-body">
           <p class="answer-label">Answer</p>
           <p class="answer-lead">Occurrences of every normalized word are grouped by its character length. The line also shows how many distinct word types have each length.</p>
-          <div class="chart" id="chart-word-lengths" role="img" aria-label="Combined chart of word length and frequency"></div>
+          <div class="chart" id="chart-word-lengths" role="img" aria-label="Combined chart of word length and frequency">
+            <img class="chart-fallback" src="figures/05_word_length_frequency.png" alt="">
+          </div>
           <div class="table-wrap" id="table-word-lengths"></div>
+          <details class="implementation" data-code-task="task_5">
+            <summary>
+              <span class="code-symbol" aria-hidden="true">&lt;/&gt;</span>
+              <span class="implementation-heading">
+                <strong>How Python produces this result</strong>
+                <small>Code taken directly from the Moodle submission</small>
+              </span>
+            </summary>
+            <div class="implementation-body">
+              <p class="implementation-summary"></p>
+              <ol class="implementation-steps"></ol>
+              <div class="source-label"><span>Source</span><code></code></div>
+              <pre class="source-code"><code></code></pre>
+            </div>
+          </details>
         </div>
       </details>
 
@@ -155,12 +248,33 @@
         <div class="task-body">
           <p class="answer-label">Answer</p>
           <p class="answer-lead" id="modal-method"></p>
-          <div class="chart" id="chart-modals" role="img" aria-label="Bar chart of modal word frequencies"></div>
+          <div class="chart" id="chart-modals" role="img" aria-label="Bar chart of modal word frequencies">
+            <img class="chart-fallback" src="figures/06a_modal_frequencies.png" alt="">
+          </div>
           <div class="chart-grid">
-            <div class="chart" id="chart-modal-words" role="img" aria-label="Box plot of word lengths for posts containing modal words"></div>
-            <div class="chart" id="chart-modal-characters" role="img" aria-label="Box plot of character lengths for posts containing modal words"></div>
+            <div class="chart" id="chart-modal-words" role="img" aria-label="Box plot of word lengths for posts containing modal words">
+              <img class="chart-fallback" src="figures/06b_modal_post_length_words.png" alt="">
+            </div>
+            <div class="chart" id="chart-modal-characters" role="img" aria-label="Box plot of character lengths for posts containing modal words">
+              <img class="chart-fallback" src="figures/06c_modal_post_length_characters.png" alt="">
+            </div>
           </div>
           <div class="table-wrap" id="table-modals"></div>
+          <details class="implementation" data-code-task="task_6">
+            <summary>
+              <span class="code-symbol" aria-hidden="true">&lt;/&gt;</span>
+              <span class="implementation-heading">
+                <strong>How Python produces this result</strong>
+                <small>Code taken directly from the Moodle submission</small>
+              </span>
+            </summary>
+            <div class="implementation-body">
+              <p class="implementation-summary"></p>
+              <ol class="implementation-steps"></ol>
+              <div class="source-label"><span>Source</span><code></code></div>
+              <pre class="source-code"><code></code></pre>
+            </div>
+          </details>
         </div>
       </details>
 
@@ -177,13 +291,32 @@
           <p class="answer-lead" id="brown-answer"></p>
           <dl class="stat-grid" id="task-7-stats"></dl>
           <div class="chart-grid">
-            <div class="chart" id="chart-brown-words" role="img" aria-label="Sentence density by stopword count and word length"></div>
-            <div class="chart" id="chart-brown-characters" role="img" aria-label="Sentence density by stopword count and character length"></div>
+            <div class="chart" id="chart-brown-words" role="img" aria-label="Sentence density by stopword count and word length">
+              <img class="chart-fallback" src="figures/07a_stopwords_vs_sentence_words.png" alt="">
+            </div>
+            <div class="chart" id="chart-brown-characters" role="img" aria-label="Sentence density by stopword count and character length">
+              <img class="chart-fallback" src="figures/07b_stopwords_vs_sentence_characters.png" alt="">
+            </div>
           </div>
           <div class="method-note">
             <strong>Reading the plots.</strong>
             Circle size and color represent the number of Brown sentences with each combination of sentence length and stopword count.
           </div>
+          <details class="implementation" data-code-task="task_7">
+            <summary>
+              <span class="code-symbol" aria-hidden="true">&lt;/&gt;</span>
+              <span class="implementation-heading">
+                <strong>How Python produces this result</strong>
+                <small>Code taken directly from the Moodle submission</small>
+              </span>
+            </summary>
+            <div class="implementation-body">
+              <p class="implementation-summary"></p>
+              <ol class="implementation-steps"></ol>
+              <div class="source-label"><span>Source</span><code></code></div>
+              <pre class="source-code"><code></code></pre>
+            </div>
+          </details>
         </div>
       </details>
     </main>

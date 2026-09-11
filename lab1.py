@@ -1,9 +1,16 @@
-"""NLP Laboratory 1 - Pavel Arkharov."""
+"""NLP Laboratory 1 - Pavel Arkharov.
+
+Web presentation: https://pavel-arkharov.github.io/nlp_lab1/
+"""
 
 import math
 import re
 from collections import Counter
 from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import nltk
@@ -21,6 +28,134 @@ def clean_words(tokens):
     return [token.lower() for token in tokens if WORD_PATTERN.fullmatch(token)]
 
 
+def character_length(tokens):
+    """Count characters after joining corpus tokens with one space."""
+    return len(" ".join(tokens))
+
+
+def ensure_nltk_data(allow_download=True):
+    """Use installed corpora, downloading only resources that are missing."""
+    resources = {
+        "nps_chat": "corpora/nps_chat",
+        "brown": "corpora/brown",
+        "stopwords": "corpora/stopwords",
+    }
+    for package, resource_path in resources.items():
+        try:
+            nltk.data.find(resource_path)
+        except LookupError:
+            if not allow_download:
+                raise RuntimeError(f"Missing NLTK resource: {package}") from None
+            if not nltk.download(package, quiet=True):
+                raise RuntimeError(f"Could not download NLTK resource: {package}")
+
+
+def task_1_prepare_nps_chat():
+    """Load NPS Chat and create the frequency distribution used by Tasks 2-6."""
+    posts = [list(post) for post in nps_chat.posts()]
+    raw_tokens = [token for post in posts for token in post]
+    words = clean_words(raw_tokens)
+    frequencies = FreqDist(words)
+    return posts, raw_tokens, words, frequencies
+
+
+def task_2_most_frequent(frequencies):
+    """Return the twenty words with the largest occurrence counts."""
+    return frequencies.most_common(20)
+
+
+def task_3_frequency_views(frequencies):
+    """Calculate word rank and cumulative corpus coverage."""
+    total_words = frequencies.N()
+    cumulative = 0
+    rows = []
+    for rank, (word, frequency) in enumerate(frequencies.most_common(), start=1):
+        cumulative += frequency
+        coverage = cumulative / total_words * 100
+        rows.append((rank, word, frequency, coverage))
+    return rows
+
+
+def task_4_frequency_samples(frequencies, sample_size=30):
+    """Select the least words and words near the middle of the frequency scale."""
+    least = sorted(frequencies.items(), key=lambda item: (item[1], item[0]))[
+        :sample_size
+    ]
+
+    # A geometric midpoint suits the strongly skewed word-frequency scale.
+    target = math.sqrt(min(frequencies.values()) * max(frequencies.values()))
+    middle = sorted(
+        frequencies.items(),
+        key=lambda item: (
+            abs(math.log(item[1]) - math.log(target)),
+            item[0],
+        ),
+    )[:sample_size]
+    middle.sort(key=lambda item: (-item[1], item[0]))
+    return least, middle, target
+
+
+def task_5_word_lengths(frequencies):
+    """Group token frequency and distinct word types by character length."""
+    token_totals = Counter()
+    type_totals = Counter()
+    for word, frequency in frequencies.items():
+        token_totals[len(word)] += frequency
+        type_totals[len(word)] += 1
+    return [
+        (length, token_totals[length], type_totals[length])
+        for length in sorted(token_totals)
+    ]
+
+
+def task_6_modal_words(posts):
+    """Count modal words and measure every post containing each modal."""
+    occurrences = Counter({modal: 0 for modal in MODALS})
+    word_lengths = {modal: [] for modal in MODALS}
+    character_lengths = {modal: [] for modal in MODALS}
+    matching_posts = []
+
+    for post_number, post in enumerate(posts, start=1):
+        post_words = clean_words(post)
+        counts = Counter(post_words)
+        for modal in MODALS:
+            occurrences[modal] += counts[modal]
+            if counts[modal]:
+                # A matching post contributes once to that modal's length data.
+                word_lengths[modal].append(len(post_words))
+                character_lengths[modal].append(character_length(post))
+                matching_posts.append(
+                    (
+                        modal,
+                        post_number,
+                        counts[modal],
+                        len(post_words),
+                        character_length(post),
+                    )
+                )
+    return occurrences, word_lengths, character_lengths, matching_posts
+
+
+def task_7_brown_stopwords():
+    """Measure stopword count and length for every Brown corpus sentence."""
+    english_stopwords = set(stopwords.words("english"))
+    metrics = []
+    for sentence_number, sentence in enumerate(brown.sents(), start=1):
+        sentence_words = clean_words(sentence)
+        stopword_count = sum(
+            word in english_stopwords for word in sentence_words
+        )
+        metrics.append(
+            (
+                sentence_number,
+                stopword_count,
+                len(sentence_words),
+                character_length(sentence),
+            )
+        )
+    return english_stopwords, metrics
+
+
 def save_figure(figure, filename):
     """Save one labeled figure in the lab1_figures directory."""
     path = FIGURE_DIR / filename
@@ -31,23 +166,16 @@ def save_figure(figure, filename):
 
 def main():
     FIGURE_DIR.mkdir(exist_ok=True)
-    for package in ("nps_chat", "brown", "stopwords"):
-        nltk.download(package, quiet=True)
+    ensure_nltk_data()
 
-    # Task 1: import and prepare the NPS Chat corpus.
-    posts = list(nps_chat.posts())
-    raw_tokens = [token for post in posts for token in post]
-    words = clean_words(raw_tokens)
-    word_frequency = FreqDist(words)
-
+    posts, raw_tokens, words, frequencies = task_1_prepare_nps_chat()
     print("\n1. NPS CHAT CORPUS")
     print(f"   Posts: {len(posts):,}")
     print(f"   Raw tokens: {len(raw_tokens):,}")
     print(f"   Normalized word tokens: {len(words):,}")
-    print(f"   Distinct words: {len(word_frequency):,}")
+    print(f"   Distinct words: {len(frequencies):,}")
 
-    # Task 2: plot the twenty most frequent words.
-    top_20 = word_frequency.most_common(20)
+    top_20 = task_2_most_frequent(frequencies)
     print("\n2. TWENTY MOST FREQUENT WORDS")
     for rank, (word, count) in enumerate(top_20, start=1):
         print(f"   {rank:2}. {word:<12} {count}")
@@ -57,50 +185,27 @@ def main():
     figure, axis = plt.subplots(figsize=(10, 7))
     bars = axis.barh(labels, counts, color="#2d6cdf")
     axis.bar_label(bars, padding=3)
-    axis.set_title("Twenty most frequent words in NPS Chat")
-    axis.set_xlabel("Frequency")
-    axis.set_ylabel("Word")
+    axis.set(title="Twenty most frequent words in NPS Chat",
+             xlabel="Frequency", ylabel="Word")
     save_figure(figure, "02_top_20_words.png")
 
-    # Task 3: alternative rank-frequency and cumulative-coverage plots.
-    frequencies = sorted(word_frequency.values(), reverse=True)
-    ranks = range(1, len(frequencies) + 1)
-    running_total = 0
-    coverage = []
-    for frequency in frequencies:
-        running_total += frequency
-        coverage.append(running_total / len(words) * 100)
-
+    rank_rows = task_3_frequency_views(frequencies)
+    print("\n3. ALTERNATIVE ILLUSTRATIONS")
+    print("   Creating a rank-frequency plot and cumulative-coverage plot.")
+    ranks = [row[0] for row in rank_rows]
+    ranked_frequencies = [row[2] for row in rank_rows]
+    coverage = [row[3] for row in rank_rows]
     figure, axes = plt.subplots(1, 2, figsize=(13, 5))
-    axes[0].loglog(ranks, frequencies, color="#2d6cdf")
-    axes[0].set_title("Rank-frequency distribution")
-    axes[0].set_xlabel("Word rank (log scale)")
-    axes[0].set_ylabel("Frequency (log scale)")
+    axes[0].loglog(ranks, ranked_frequencies, color="#2d6cdf")
+    axes[0].set(title="Rank-frequency distribution",
+                xlabel="Word rank (log scale)", ylabel="Frequency (log scale)")
     axes[1].semilogx(ranks, coverage, color="#e05a47")
-    axes[1].set_title("Cumulative token coverage")
-    axes[1].set_xlabel("Word types included (log scale)")
-    axes[1].set_ylabel("Coverage (%)")
-    figure.suptitle("3. Alternative frequency illustrations")
+    axes[1].set(title="Cumulative token coverage",
+                xlabel="Word types included (log scale)", ylabel="Coverage (%)")
     figure.tight_layout()
     save_figure(figure, "03_alternative_views.png")
-    print("\n3. ALTERNATIVE ILLUSTRATIONS")
-    print("   Created a Zipf-style rank plot and cumulative-coverage plot.")
 
-    # Task 4: select thirty least- and middle-frequency words.
-    least_30 = sorted(
-        word_frequency.items(), key=lambda item: (item[1], item[0])
-    )[:30]
-    middle_target = math.sqrt(
-        min(word_frequency.values()) * max(word_frequency.values())
-    )
-    middle_30 = sorted(
-        word_frequency.items(),
-        key=lambda item: (
-            abs(math.log(item[1]) - math.log(middle_target)), item[0]
-        ),
-    )[:30]
-    middle_30.sort(key=lambda item: (-item[1], item[0]))
-
+    least_30, middle_30, middle_target = task_4_frequency_samples(frequencies)
     print("\n4. FREQUENCY-RANGE WORDS")
     print("   Least frequent:", least_30)
     print(f"   Geometric middle target: {middle_target:.2f}")
@@ -114,109 +219,65 @@ def main():
         labels = [word for word, count in reversed(records)]
         counts = [count for word, count in reversed(records)]
         axis.barh(labels, counts, color=color)
-        axis.set_title(title)
-        axis.set_xlabel("Frequency")
-        axis.set_ylabel("Word")
+        axis.set(title=title, xlabel="Frequency", ylabel="Word")
     figure.tight_layout()
     save_figure(figure, "04_frequency_ranges.png")
 
-    # Task 5: sum word frequency for every character length.
-    frequency_by_length = Counter()
-    for word, frequency in word_frequency.items():
-        frequency_by_length[len(word)] += frequency
-
-    lengths = sorted(frequency_by_length)
-    length_frequencies = [frequency_by_length[length] for length in lengths]
+    length_rows = task_5_word_lengths(frequencies)
     print("\n5. WORD LENGTH VERSUS FREQUENCY")
-    for length in lengths:
-        print(f"   {length:2} characters: {frequency_by_length[length]:,}")
-
+    for length, token_count, type_count in length_rows:
+        print(f"   {length:2} characters: {token_count:,}")
     figure, axis = plt.subplots(figsize=(10, 5))
+    lengths = [row[0] for row in length_rows]
+    length_frequencies = [row[1] for row in length_rows]
     axis.bar(lengths, length_frequencies, color="#21867a")
     axis.plot(lengths, length_frequencies, color="#1f2925", marker="o")
-    axis.set_title("NPS Chat word length versus frequency")
-    axis.set_xlabel("Word length in characters")
-    axis.set_ylabel("Total frequency")
+    axis.set(title="NPS Chat word length versus frequency",
+             xlabel="Word length in characters", ylabel="Total frequency")
     save_figure(figure, "05_word_length_frequency.png")
 
-    # Task 6: modal frequencies and lengths of posts containing each modal.
-    modal_word_lengths = {modal: [] for modal in MODALS}
-    modal_character_lengths = {modal: [] for modal in MODALS}
-    for post in posts:
-        post_words = clean_words(post)
-        for modal in MODALS:
-            if modal in post_words:
-                modal_word_lengths[modal].append(len(post_words))
-                modal_character_lengths[modal].append(len(" ".join(post)))
-
+    modal_counts, modal_words, modal_characters, _matching_posts = (
+        task_6_modal_words(posts)
+    )
     print("\n6. MODAL WORDS")
     for modal in MODALS:
-        print(f"   {modal}: {word_frequency[modal]} occurrences")
-        print(f"      Post lengths in words: {modal_word_lengths[modal]}")
-        print(f"      Post lengths in characters: {modal_character_lengths[modal]}")
+        print(f"   {modal}: {modal_counts[modal]} occurrences")
+        print(f"      Post lengths in words: {modal_words[modal]}")
+        print(f"      Post lengths in characters: {modal_characters[modal]}")
 
     figure, axes = plt.subplots(1, 3, figsize=(16, 5))
-    axes[0].bar(MODALS, [word_frequency[m] for m in MODALS], color="#2d6cdf")
-    axes[0].set_title("Modal-word frequencies")
-    axes[0].set_xlabel("Modal word")
-    axes[0].set_ylabel("Frequency")
-    axes[1].boxplot(
-        [modal_word_lengths[m] for m in MODALS], tick_labels=MODALS,
-        showfliers=False
-    )
-    axes[1].set_title("Matching post lengths")
-    axes[1].set_xlabel("Modal word")
-    axes[1].set_ylabel("Words")
-    axes[2].boxplot(
-        [modal_character_lengths[m] for m in MODALS], tick_labels=MODALS,
-        showfliers=False
-    )
-    axes[2].set_title("Matching post character lengths")
-    axes[2].set_xlabel("Modal word")
-    axes[2].set_ylabel("Characters")
+    axes[0].bar(MODALS, [modal_counts[modal] for modal in MODALS], color="#2d6cdf")
+    axes[0].set(title="Modal-word frequencies", xlabel="Modal word", ylabel="Frequency")
+    axes[1].boxplot([modal_words[modal] for modal in MODALS],
+                    tick_labels=MODALS, showfliers=False)
+    axes[1].set(title="Matching post lengths", xlabel="Modal word", ylabel="Words")
+    axes[2].boxplot([modal_characters[modal] for modal in MODALS],
+                    tick_labels=MODALS, showfliers=False)
+    axes[2].set(title="Matching post character lengths",
+                xlabel="Modal word", ylabel="Characters")
     figure.tight_layout()
     save_figure(figure, "06_modal_words.png")
 
-    # Task 7: Brown stopwords versus sentence length.
-    english_stopwords = set(stopwords.words("english"))
-    brown_word_lengths = []
-    brown_character_lengths = []
-    brown_stopword_counts = []
-
-    for sentence in brown.sents():
-        sentence_words = clean_words(sentence)
-        brown_word_lengths.append(len(sentence_words))
-        brown_character_lengths.append(len(" ".join(sentence)))
-        brown_stopword_counts.append(
-            sum(word in english_stopwords for word in sentence_words)
-        )
-
+    _english_stopwords, brown_metrics = task_7_brown_stopwords()
+    stopword_counts = [row[1] for row in brown_metrics]
+    word_lengths = [row[2] for row in brown_metrics]
+    character_lengths = [row[3] for row in brown_metrics]
     print("\n7. BROWN CORPUS STOPWORDS")
-    print(f"   Sentences: {len(brown_word_lengths):,}")
-    print(f"   Total stopwords: {sum(brown_stopword_counts):,}")
-    print(
-        "   Mean stopwords per sentence: "
-        f"{sum(brown_stopword_counts) / len(brown_stopword_counts):.2f}"
-    )
+    print(f"   Sentences: {len(brown_metrics):,}")
+    print(f"   Total stopwords: {sum(stopword_counts):,}")
+    print(f"   Mean stopwords per sentence: "
+          f"{sum(stopword_counts) / len(stopword_counts):.2f}")
 
     figure, axes = plt.subplots(1, 2, figsize=(14, 5))
-    word_plot = axes[0].hexbin(
-        brown_word_lengths, brown_stopword_counts,
-        gridsize=45, mincnt=1, bins="log", cmap="viridis"
-    )
-    axes[0].set_title("Stopwords versus sentence length")
-    axes[0].set_xlabel("Sentence length in words")
-    axes[0].set_ylabel("Number of stopwords")
-    figure.colorbar(word_plot, ax=axes[0], label="Sentence density")
-
-    character_plot = axes[1].hexbin(
-        brown_character_lengths, brown_stopword_counts,
-        gridsize=45, mincnt=1, bins="log", cmap="viridis"
-    )
-    axes[1].set_title("Stopwords versus character length")
-    axes[1].set_xlabel("Sentence length in characters")
-    axes[1].set_ylabel("Number of stopwords")
-    figure.colorbar(character_plot, ax=axes[1], label="Sentence density")
+    for axis, lengths, title, label in (
+        (axes[0], word_lengths, "Stopwords versus sentence length", "Words"),
+        (axes[1], character_lengths, "Stopwords versus character length", "Characters"),
+    ):
+        density = axis.hexbin(lengths, stopword_counts, gridsize=45,
+                              mincnt=1, bins="log", cmap="viridis")
+        axis.set(title=title, xlabel=f"Sentence length in {label.lower()}",
+                 ylabel="Number of stopwords")
+        figure.colorbar(density, ax=axis, label="Sentence density")
     figure.tight_layout()
     save_figure(figure, "07_brown_stopwords.png")
 
